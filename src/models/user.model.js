@@ -1,4 +1,6 @@
 import mongoose, { Schema } from "mongoose";
+import jwt from "jsonwebtoken"
+import bcrypt from "bcrypt"
 
 const userSchema = new Schema({
     username: {
@@ -48,7 +50,7 @@ userSchema.pre('save', async function (next) {
     if (!this.isModified("password")) return;
 
     //if password is change/modified
-    this.password = await bcrypt.hash(this.passwords, 10);
+    this.password = await bcrypt.hash(this.password, 10)
 
     //do this and go next steps ita a middleware 
     next();
@@ -56,7 +58,7 @@ userSchema.pre('save', async function (next) {
 
 //check the password is correct or not use isPasswordCorrect is by default given by mongoose
 userSchema.methods.isPasswordCorrect = async function (password) {
-    return await bcrypt.compare(password, this.password);
+    return await bcrypt.compare(password, this.password)
 }
 
 //generate the access token 
