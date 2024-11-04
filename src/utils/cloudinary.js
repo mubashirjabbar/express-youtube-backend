@@ -8,22 +8,24 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-
 //common function to upload images to the cloudinary files
 const uploadOnCloudinary = async (localFilePath) => {
     try {
         if (!localFilePath) return null
+
         //upload on cloudinary
         const result = await cloudinary.uploader.upload(localFilePath, { resource_type: "auto" });
-        console.log("File uploaded successfully on cloudinary", result.url);
+
+        //remove the file form the local server 
+        fs.unlinkSync(localFilePath);
+
+        //return the url of the uploaded image
         return result
     } catch (error) {
 
         //remove the localFilePath from the server
         fs.unlinkSync(localFilePath);
         return null
-
     }
 }
-
 export { uploadOnCloudinary }
