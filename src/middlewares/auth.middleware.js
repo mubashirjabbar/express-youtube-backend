@@ -2,14 +2,13 @@ import jwt from "jsonwebtoken"
 
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js"
-
-
+import { ApiError } from "../utils/ApiError.js";
 
 export const verifyJwt = asyncHandler(async (req, _, next) => {
 
     try {
         //get token form the cookies
-        const token = req.cookies?.access_token || req.header("Authorization")?.replace("Bearer", "")
+        const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "")
 
         // if token is not present
         if (!token) {
@@ -20,7 +19,7 @@ export const verifyJwt = asyncHandler(async (req, _, next) => {
         const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)
 
         //get the user details without the password and refresh token
-        const user = await User.findById(decodedToken?._id).select("-password", "-refresh_token")
+        const user = await User.findById(decodedToken?._id).select("-password -refresh_token")
 
         // if token is not found 
         if (!user) {
