@@ -12,7 +12,7 @@ const generateAccessAndRefreshToken = async (userId) => {
         const accessToken = user.generateAccessToken();
         const refreshToken = user.generateRefreshToken();
 
-        //saving it
+        //saving it to db
         user.refreshToken = refreshToken;
         await user.save({ validateBeforeSave: false });
 
@@ -29,9 +29,6 @@ const generateAccessAndRefreshToken = async (userId) => {
 const registerUser = asyncHandler(async (req, res) => {
 
     const { username, email, password, fullName } = req.body;
-    console.log("email----->", email);
-    console.log("password----->", password);
-
 
     // if any field is missed
     if ([username, email, password, fullName].some((field) => field?.trim === "")) {
@@ -95,15 +92,11 @@ const registerUser = asyncHandler(async (req, res) => {
 
 const login = asyncHandler(async (req, res) => {
     const { email, username, password } = req.body
-    console.log(email);
 
     // if any field is missed
     if ([username, email, password, password].some((field) => field?.trim === "")) {
         throw new ApiError(400, "All fields are required")
     }
-    console.log("email----->", email);
-    console.log("password----->", password);
-
 
     // if any field is missed
     if (!(username || email)) {
@@ -129,13 +122,12 @@ const login = asyncHandler(async (req, res) => {
     }
 
     //getting the tokens
-    const { accessToken, refreshToken } = generateAccessAndRefreshToken(user?._id)
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user?._id)
 
     //send the resp and user data to frontend right now im calling the db query you can just update the user object and send it to frontend
-    const loggedIdUser = await User.findById(user._id).select("-password", "-refreshToken")
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
 
     //send cookies to frontend
-
     //it can only be edit from the backend side, user can change it form frontend side
     const options = {
         httpOnly: true,
@@ -143,19 +135,20 @@ const login = asyncHandler(async (req, res) => {
     }
 
     //send response to frontend with access token and refresh token
-    return res.send(200).cookie("accessToken", accessToken, options).cookie("refreshToken", refreshToken, options)
-        .json(200, {
-            user: loggedIdUser, accessToken, refreshToken
-        }, "User logged in successfully")
-
-
+    return res
+        .status(200).cookie("accessToken", accessToken, options).cookie("refreshToken", refreshToken, options).json(
+            new ApiResponse(200, {
+                user: loggedInUser, accessToken, refreshToken
+            },
+                "User logged In Successfully"
+            )
+        )
 
 })
 
 const logout = asyncHandler(async (req, res,) => {
 
     // find the id which you want to logout we can get this id form the frontend as well, but in this case we wrote the middleware who gave us the user id by there access token
-
     //and also we add new true it means give me the updated user object not the old one
     await User.findByIdAndUpdate(req.user._id, {
         $set: {
@@ -172,14 +165,9 @@ const logout = asyncHandler(async (req, res,) => {
         secure: true
     }
 
-    return res
-        .send(200)
-        .clearCookie("accessToken", accessToken, options)
-        .clearCookie("refreshToken", refreshToken, options)
-        .json(new ApiResponse(200, {}, "User logged out"))
-
-
-
+    return res.send(200).clearCookie("accessToken", accessToken, options).clearCookie("refreshToken", refreshToken, options).json(new ApiResponse(200,
+        {},
+        "User logged out"))
 })
 
 export { registerUser, login, logout }
