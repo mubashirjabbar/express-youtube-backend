@@ -1,9 +1,12 @@
+import jwt from "jsonwebtoken"
+import mongoose, { Schema } from "mongoose";
+
+
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { User } from "../models/user.model.js"
 import { ApiResponse } from "../utils/apiResponse.js"
-import { cookie } from "express/lib/response.js";
 
 
 //just pass the id if will create the new token and save them into db
@@ -175,9 +178,8 @@ const logout = asyncHandler(async (req, res,) => {
 })
 
 const refreshAccessToken = (async (req, res) => {
-
     //get the token form the frontend or mobile
-    const incomingToken = req.cookie.refreshToken || req.refreshToken
+    const incomingToken = req.cookies.refreshToken || req.refreshToken
 
     //check the token that we have or not
     if (!incomingToken) {
@@ -189,7 +191,7 @@ const refreshAccessToken = (async (req, res) => {
         const decodedToken = jwt.verify(incomingToken, process.env.REFRESH_TOKEN_SECRET)
 
         //check the token in database which use having this token
-        const user = User.findById(decodedToken?._id)
+        const user = await User.findById(decodedToken?._id)
 
         // if user not found
         if (!user) {
@@ -203,8 +205,7 @@ const refreshAccessToken = (async (req, res) => {
         }
 
         //generate new access and refresh tokens
-
-        const { accessToken, newRefreshToken } = await generateAccessAndRefreshToken(User._id)
+        const { accessToken, newRefreshToken } = await generateAccessAndRefreshToken(user._id)
 
         //send cookies to frontend
         //it can only be edit from the backend side, user can change it form frontend side
@@ -252,4 +253,78 @@ const changeUserPassword = (async (req, res) => {
     )
 })
 
-export { registerUser, login, logout, refreshAccessToken, changeUserPassword }
+const getCurrentUser = (async (req, res) => {
+    return res.status(200).json(
+        new ApiResponse(200, req.user, "User fetched successfully")
+    )
+})
+
+const updateUserDetails = (async (req, res) => {
+
+    const { username, fullName } = req.body
+
+    if (!username || !fullName) {
+        throw new ApiError(400, "Fields are required")
+    }
+
+    //check the user form the db, id we got from the req.user._id
+    const updatedUser = await User.findByIdAndUpdate(
+        req?.user?._id,
+        {
+            $set: { username, fullName }
+        },
+        { new: true }
+        //send me the updated app when its values is updated
+    ).select("-password")
+    //give me the whole object without the password
+
+    return res.status(200).json(
+        new ApiResponse(200, updatedUser, "User updated successfully")
+    )
+
+})
+
+const getUserById = async (req, res, next) => {
+    try {
+        const { id } = req.query;
+
+        if (!id) {
+            throw new ApiError(400, "Id is required");
+        }
+        const user = await User.findById(id);
+
+        if (!user) {
+            throw new ApiError(404, "User not found");
+        }
+
+        return res.status(200).json(
+            new ApiResponse(200, user, "User found successfully")
+        );
+    } catch (error) {
+        next(error); // Passes the error to an error-handling middleware
+    }
+};
+
+const deleteUserById = (async (req, res) => {
+    const { _id, } = req.body
+
+    if (!_id) {
+        throw new ApiError(400, "Id is required")
+    }
+
+    await User.findByIdAndDelete(_id);
+
+    return res.status(200).json(
+        new ApiResponse(200, {}, "User deleted successfully")
+    )
+})
+
+const getAllUser = (async (req, res) => {
+    const users = await User.find();
+
+    return res.status(200).json(
+        new ApiResponse(200, users, "Users fetched successfully")
+    )
+})
+
+export { registerUser, login, logout, refreshAccessToken, changeUserPassword, getCurrentUser, updateUserDetails, getUserById, deleteUserById, getAllUser }
