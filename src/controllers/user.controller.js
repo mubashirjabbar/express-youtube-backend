@@ -225,4 +225,31 @@ const refreshAccessToken = (async (req, res) => {
     }
 })
 
-export { registerUser, login, logout, refreshAccessToken }
+const changeUserPassword = (async (req, res) => {
+
+    //get password from the frontend
+    const { currentPassword, newPassword } = req.body
+
+    // check the user on db which password you want to change   
+    const user = await User.findById(req.user._id)
+
+    // check the old password is correctly send by frontend user
+    const passwordCorrect = await user.isPasswordCorrect(currentPassword)
+
+    if (!passwordCorrect) {
+        throw new ApiError(400, "Old password is incorrect")
+    }
+
+    //set new password
+    user.password = newPassword
+
+    // save new password without performing any validation
+    await user.save({ validateBeforeSave: false })
+
+    // send resp to frontend
+    return res.status(200).json(
+        new ApiResponse(200, {}, "Password changed successfully")
+    )
+})
+
+export { registerUser, login, logout, refreshAccessToken, changeUserPassword }
