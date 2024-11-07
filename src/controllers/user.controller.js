@@ -3,7 +3,10 @@ import { ApiError } from "../utils/ApiError.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { User } from "../models/user.model.js"
 import { ApiResponse } from "../utils/apiResponse.js"
+import { cookie } from "express/lib/response.js";
 
+
+//just pass the id if will create the new token and save them into db
 const generateAccessAndRefreshToken = async (userId) => {
     try {
         //get user id which you want to save the token
@@ -24,7 +27,6 @@ const generateAccessAndRefreshToken = async (userId) => {
 
     }
 }
-
 
 const registerUser = asyncHandler(async (req, res) => {
 
@@ -172,4 +174,55 @@ const logout = asyncHandler(async (req, res,) => {
         .json(new ApiResponse(200, {}, "User logged Out"))
 })
 
-export { registerUser, login, logout }
+const refreshAccessToken = (async (req, res) => {
+
+    //get the token form the frontend or mobile
+    const incomingToken = req.cookie.refreshToken || req.refreshToken
+
+    //check the token that we have or not
+    if (!incomingToken) {
+        throw new ApiError(401, "unauthorized request")
+    }
+
+    try {
+        //verify the token and its a refresh token beacuse we savde decoded token in the db not the actual one that we shared to the user to frontend
+        const decodedToken = jwt.verify(incomingToken, process.env.REFRESH_TOKEN_SECRET)
+
+        //check the token in database which use having this token
+        const user = User.findById(decodedToken?._id)
+
+        // if user not found
+        if (!user) {
+            throw new ApiError(401, "invalid refresh token")
+        }
+
+        // now check the both token which saved in the db and the user send us the token form the frontend or mobile
+        //if they are not the same then it means user logged out from other device or browser and we should not give him new access token
+        if (user.refreshToken !== incomingToken) {
+            throw new ApiError(401, "Refresh token is expired")
+        }
+
+        //generate new access and refresh tokens
+
+        const { accessToken, newRefreshToken } = await generateAccessAndRefreshToken(User._id)
+
+        //send cookies to frontend
+        //it can only be edit from the backend side, user can change it form frontend side
+        const options = {
+            httpOnly: true,
+            secure: true
+        }
+
+        //send response to frontend with access token and refresh token
+        return res
+            .status(200).cookie("accessToken", accessToken, options).cookie("refreshToken", newRefreshToken, options).json(
+                new ApiResponse(200, { accessToken, refreshToken: newRefreshToken },
+                    "User token has been refresh successfully"
+                )
+            )
+    } catch (error) {
+        throw new ApiError(401, error?.message || "something went wrong")
+    }
+})
+
+export { registerUser, login, logout, refreshAccessToken }
