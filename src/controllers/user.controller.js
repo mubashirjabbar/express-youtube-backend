@@ -156,8 +156,10 @@ const logout = asyncHandler(async (req, res,) => {
     // find the id which you want to logout we can get this id form the frontend as well, but in this case we wrote the middleware who gave us the user id by there access token
     //and also we add new true it means give me the updated user object not the old one
     await User.findByIdAndUpdate(req.user._id, {
-        $set: {
-            refreshToken: undefined
+
+        // to unset any thing in mongoes use unset for this, in this case we have refreshToken to be unset 1
+        $unset: {
+            refreshToken: 1
         }
     },
         {
