@@ -327,4 +327,271 @@ const getAllUser = (async (req, res) => {
     )
 })
 
-export { registerUser, login, logout, refreshAccessToken, changeUserPassword, getCurrentUser, updateUserDetails, getUserById, deleteUserById, getAllUser }
+const updateUserAvatar = asyncHandler(async (req, res) => {
+    const avatarLocalPath = req.file?.path
+
+    if (!avatarLocalPath) {
+        throw new ApiError(400, "Avatar file is missing")
+    }
+
+    //TODO: delete old image - assignment
+
+    const avatar = await uploadOnCloudinary(avatarLocalPath)
+
+    if (!avatar.url) {
+        throw new ApiError(400, "Error while uploading on avatar")
+
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: {
+                avatar: avatar.url
+            }
+        },
+        { new: true }
+    ).select("-password")
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, user, "Avatar image updated successfully")
+        )
+})
+
+const updateUserCoverImage = asyncHandler(async (req, res) => {
+    const coverImageLocalPath = req.file?.path
+
+    if (!coverImageLocalPath) {
+        throw new ApiError(400, "Cover image file is missing")
+    }
+
+    //TODO: delete old image - assignment
+    const coverImage = await uploadOnCloudinary(coverImageLocalPath)
+
+    if (!coverImage.url) {
+        throw new ApiError(400, "Error while uploading on avatar")
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: {
+                coverImage: coverImage.url
+            }
+        },
+        { new: true }
+    ).select("-password")
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, user, "Cover image updated successfully")
+        )
+})
+
+const getUserChannelProfile = asyncHandler(async () => {
+    const { username } = res.params
+
+    if (!username) {
+        throw new ApiError(400, "Username is required")
+    }
+
+    //now applying the aggregation
+    const channel = await User.aggregate([
+        //below is the our first pipeline we can add multiple pipelines
+        //first pipeline, 
+        {
+            //how i need yo match with the username, means which thing you need to search
+            $match: {
+                username: username?.toLowerCase()
+            }
+        },
+
+        //second pipeline
+        {
+            // where you need to aggregate the data
+            $lookup: {
+                // from where, in this case we have Subscription but as we know that in the monodb the model name is store like subscriptions means in plural form with small first letter
+
+                // this subscriptions not Subscription
+                from: "subscriptions",
+
+                // what u need to see
+                localField: "_id",
+
+                // from where you need to see
+                foreignField: "channel",
+
+                // name of the field which show in the model when we send the response to user
+                as: "subscribers"
+
+            }
+        },
+
+        //third pipeline
+        {
+            // where you need to aggregate the data
+            $lookup: {
+                // from where, in this case we have Subscription but as we know that in the monodb the model name is store like subscriptions means in plural form with small first letter
+
+                // this subscriptions not Subscription
+                from: "subscriptions",
+
+                // what u need to see
+                localField: "_id",
+
+                // from where you need to see the subscriber from subscription model in this we have the subscriber
+                foreignField: "subscriber",
+
+                // name of the field which show in the model when we send the response to user
+                as: "subscribedTo"
+            }
+        },
+
+        //fourth pipeline
+        {
+            //we need to add our documents means in the case we have the count
+            $addFields: {
+                // count of subscribers
+                subscriberCount: { $size: "$subscribers" },
+
+                // count of users who are subscribed to this user
+                subscribedToCount: { $size: "$subscribedTo" },
+
+                // we need to send the isSubscriber channel to frontend like true and false
+                isSubscriber: {
+                    $cond: {
+                        // req?.user?._id we get when user is login if yes then we need to check that his id excite in all our subscribers if yes then we need to true otherwise false
+                        if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+                        then: true,
+                        else: false
+                    }
+                }
+            }
+        },
+
+        //fifth pipeline 
+        {
+            // we need to send the only the document which is updated we don't need to send the all documents
+            $project: {
+                fullName: 1,
+                username: 1,
+                avatar: 1,
+                coverImage: 1,
+                subscriberCount: 1,
+                subscribedToCount: 1,
+                isSubscriber: 1,
+
+            }
+        }
+
+
+
+    ]);
+    // now check the channel exist or not
+    if (!channel.length) {
+        throw new ApiError(404, "Channel not found")
+    }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, channel[0], "User channel fetched successfully")
+        )
+})
+
+const getWatchHistory = asyncHandler((req, res) => {
+    //fine the id user ligin and then convert it same that store in the DB, like objectId("12345")
+    const id = new mongoose.Types.ObjectId(req.user._id)
+
+    const user = User.aggregate([
+        {
+            $match: {
+                _id: id
+            }
+        },
+        {
+            $lookup: {
+                //from where you need to look up  in the case we need to loop on the video
+                from: "videos",
+
+                // in user section we have the watchHistory
+                localField: "watchHistory",
+
+                // and its from video section id, when the id comes here is become the foreign key here. 
+                foreignField: "_id",
+
+                // which we need to share the to the frontend name of the object
+                as: "watchHistory",
+
+                // right now we don't have the owner
+                // for the owner we need to call again the user model and ask for the data, for this we can use inside pipeline, this is the another method of calling it 
+                pipeline: [
+                    {
+                        $lookup: {
+                            // data form the other model, in the case we have the users
+                            from: "users",
+
+                            // our local field in this case we have the watchHistory
+                            localField: "watchHistory.owner",
+
+                            // and its from user section id, when the id comes here is become the foreign key here.
+                            foreignField: "_id",
+
+                            // which we need to share the to the frontend name of the object
+                            as: "owner",
+
+                            // now we are get only those values which we need to share
+                            pipeline: [
+                                {
+                                    $project: {
+                                        fullName: 1,
+                                        username: 1,
+                                        avatar: 1,
+                                        coverImage: 1
+                                    }
+                                },
+                                // we need to send the only owner to the frontend not the array[0] like this 
+                                {
+                                    $addFields: {
+                                        owner: {
+                                            $first: "$owner"
+                                        }
+
+                                    }
+                                }
+                            ]
+
+                        }
+                    }
+                ]
+            }
+        }
+    ])
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, user[0].watchHistory, "Watched channel history fetched successfully")
+        )
+})
+
+
+export {
+    registerUser,
+    login,
+    logout,
+    refreshAccessToken,
+    changeUserPassword,
+    getCurrentUser,
+    updateUserDetails,
+    getUserById,
+    deleteUserById,
+    getAllUser,
+    updateUserAvatar,
+    updateUserCoverImage,
+    getUserChannelProfile,
+    getWatchHistory
+}
