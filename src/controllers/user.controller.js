@@ -3,10 +3,10 @@ import mongoose, { Schema } from "mongoose";
 
 
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { ApiError } from "../utils/ApiError.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { User } from "../models/user.model.js"
 import { ApiResponse } from "../utils/apiResponse.js"
+import { ApiError } from "../utils/ApiError.js";
 
 
 //just pass the id if will create the new token and save them into db
@@ -492,7 +492,6 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 
 
     ]);
-    console.log("channel----->", channel);
 
     // now check the channel exist or not
     if (!channel.length) {
