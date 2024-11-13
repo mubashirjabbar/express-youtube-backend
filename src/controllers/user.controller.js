@@ -393,8 +393,8 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
         )
 })
 
-const getUserChannelProfile = asyncHandler(async () => {
-    const { username } = res.params
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+    const { username } = req.params
 
     if (!username) {
         throw new ApiError(400, "Username is required")
@@ -492,6 +492,8 @@ const getUserChannelProfile = asyncHandler(async () => {
 
 
     ]);
+    console.log("channel----->", channel);
+
     // now check the channel exist or not
     if (!channel.length) {
         throw new ApiError(404, "Channel not found")
@@ -504,11 +506,11 @@ const getUserChannelProfile = asyncHandler(async () => {
         )
 })
 
-const getWatchHistory = asyncHandler((req, res) => {
+const getWatchHistory = asyncHandler(async (req, res) => {
     //fine the id user ligin and then convert it same that store in the DB, like objectId("12345")
     const id = new mongoose.Types.ObjectId(req.user._id)
 
-    const user = User.aggregate([
+    const user = await User.aggregate([
         {
             $match: {
                 _id: id
@@ -576,7 +578,7 @@ const getWatchHistory = asyncHandler((req, res) => {
     return res
         .status(200)
         .json(
-            new ApiResponse(200, user[0].watchHistory, "Watched channel history fetched successfully")
+            new ApiResponse(200, user[0]?.watchHistory, "Watched channel history fetched successfully")
         )
 })
 
