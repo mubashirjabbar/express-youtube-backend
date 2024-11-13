@@ -12,7 +12,7 @@ export const verifyJwt = asyncHandler(async (req, _, next) => {
 
         // if token is not present
         if (!token) {
-            throw new Error("No access token found")
+            throw new ApiError(401,"No access token found")
         }
 
         // check the token validity
