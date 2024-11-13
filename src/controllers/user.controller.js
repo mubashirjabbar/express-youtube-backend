@@ -492,7 +492,6 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 
 
     ]);
-    console.log("channel----->", channel);
 
     // now check the channel exist or not
     if (!channel.length) {
