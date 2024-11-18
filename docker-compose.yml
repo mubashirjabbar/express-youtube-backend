@@ -1,0 +1,25 @@
+version: "3.8"
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/usr/src/app
+      - /usr/src/app/node_modules
+    environment:
+      - NODE_ENV=development
+      - PORT=8000
+      - MONGO_DB_URL=mongodb+srv://mubashirjabbar97:Mubashir@node-testing-cluster.sux8rcd.mongodb.net
+      - CORS_ORIGIN=*
+      - ACCESS_TOKEN_SECRET=12345678
+      - ACCESS_TOKEN_EXPIRY=1d
+      - REFRESH_TOKEN_SECRET=12345678
+      - REFRESH_TOKEN_EXPIRY=10d
+      - CLOUDINARY_CLOUD_NAME=do5bijia8
+      - CLOUDINARY_API_KEY=275217696667265
+      - CLOUDINARY_API_SECRET=X2ujoqqB6J8_LnUVRHsnfppHfzU
+    env_file:
+      - .env
