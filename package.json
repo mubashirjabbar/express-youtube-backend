@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "This is backend form my the chai and code",
   "type": "module",
+  "imports": {
+    "#utils/*": "./src/utils/*"
+  },
   "main": "index.js",
   "scripts": {
     "dev": "nodemon -r dotenv/config --experimental-json-modules src/index.js",
