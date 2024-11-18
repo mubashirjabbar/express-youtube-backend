@@ -1,6 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 
-import { ApiError } from "../utils/ApiError.js";
+import { ApiError } from "../utils/apiError.js";
 import { Video } from "../models/video.model.js"
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
