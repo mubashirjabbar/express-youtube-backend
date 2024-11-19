@@ -9,10 +9,10 @@ import { ApiResponse } from "../utils/apiResponse.js";
 
 
 const publishVideo = asyncHandler(async (req, res) => {
-    const { title, description } = req.body;
+    const { title, description, isPublished } = req.body;
 
 
-    if (!title || !description) {
+    if (!title || !description || !isPublished) {
         throw new ApiError(400, "All Fields are required");
     }
 
@@ -49,6 +49,7 @@ const publishVideo = asyncHandler(async (req, res) => {
         description,
         duration: videoFile.duration,
         owner: req.user._id,
+        isPublished: false
     });
 
     if (!video) {
@@ -91,7 +92,6 @@ const getUserVideosById = asyncHandler(async (req, res) => {
 
 });
 
-
 const updateVideo = asyncHandler(async (req, res) => {
 
     const { title, description } = req.body;
@@ -115,7 +115,7 @@ const updateVideo = asyncHandler(async (req, res) => {
     //if u aare the owner of the video
     if (video?.owner.toString() !== req.user?._id.toString()) {
         throw new ApiError(
-            400,"You can't edit this video as you are not the owner"
+            400, "You can't edit this video as you are not the owner"
         );
     }
 
@@ -155,8 +155,83 @@ const updateVideo = asyncHandler(async (req, res) => {
 
 });
 
+const deleteVideo = asyncHandler(async (req, res) => {
+    const { videoId } = req.params;
+    //TODO: delete video
+    if (!isValidObjectId(videoId)) {
+        throw new ApiError(400, "Invalid Video ID");
+    }
+
+    const video = await Video.findById(videoId);
+    if (!video) {
+        throw new ApiError(404, "Video not found");
+    }
+
+    if (video?.owner.toString() !== req.user?._id.toString()) {
+        throw new ApiError(
+            400, "You can't edit this video as you are not the owner"
+        );
+    }
+
+    // const cloudinaryDeleteVideoResponse = await deleteFromCloudinary(
+    //     video.videoFile
+    // );
+    // if (cloudinaryDeleteVideoResponse.result !== "ok") {
+    //     throw new ApiError(500, "Error while deleting video from cloudinary");
+    // }
+
+    const cloudinaryDeleteThumbnailResponse = await deleteFromCloudinary(
+        video.thumbnail
+    );
+    if (cloudinaryDeleteThumbnailResponse.result !== "ok") {
+        throw new ApiError(500, "Error while deleting thumbnail from cloudinary");
+    }
+
+    const deleteVideo = await Video.findByIdAndDelete(videoId);
+    if (!deleteVideo) {
+        throw new ApiError(500, "Error while deleting video");
+    }
+
+    return res.status(200).json(new ApiResponse(200, {}, "Video Deleted"));
+});
+
+
+const publishAVideo = asyncHandler(async (req, res) => {
+    const { videoId } = req.params;
+
+    if (!isValidObjectId(videoId)) {
+        throw new ApiError(400, "Invalid Video ID");
+    }
+
+    const video = await Video.findById(videoId);
+    if (!video) {
+        throw new ApiError(404, "Video not found");
+    }
+
+    if (video?.owner.toString() !== req.user?._id.toString()) {
+        throw new ApiError(
+            400, "You can't edit this video as you are not the owner"
+        );
+    }
+
+    const videoPublished = await Video.findByIdAndUpdate(videoId,
+        {
+            $set: {
+                isPublished: true,
+            }
+        },
+        { new: true });
+
+    if (!videoPublished) {
+        throw new ApiError(404, "Video not published");
+    }
+
+    return res.status(200).json(new ApiResponse(200, videoPublished, "Video published successfully"));
+});
 
 
 
 
-export { publishVideo, getAllVideoFiles, getUserVideosById, updateVideo }
+
+
+export { publishVideo, getAllVideoFiles, getUserVideosById, updateVideo, deleteVideo, publishAVideo }

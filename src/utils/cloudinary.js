@@ -46,4 +46,5 @@ const deleteFromCloudinary = async (cloudinaryFilepath) => {
     }
 };
 
+
 export { uploadOnCloudinary, deleteFromCloudinary }
