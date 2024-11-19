@@ -41,6 +41,8 @@ const publishVideo = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Error while uploading thumbnail file");
     }
 
+
+
     // create new video in db
     const video = await Video.create({
         videoFile: videoFile.url,
@@ -61,17 +63,53 @@ const publishVideo = asyncHandler(async (req, res) => {
 });
 
 const getAllVideoFiles = asyncHandler(async (req, res) => {
+    const videoFiles = await Video.aggregate([
+        {
+            $lookup: {
+                from: "users", // The collection name for the User model
+                localField: "owner", // Field in Video collection
+                foreignField: "_id", // Field in User collection
+                as: "ownerDetails", // Name of the new field
+            },
+        },
+        {
+            $unwind: {
+                path: "$ownerDetails", // Flatten the ownerDetails array
+                preserveNullAndEmptyArrays: true, // Include videos without an owner
+            },
+        },
+        {
+            $project: {
+                videoFile: 1,
+                thumbnail: 1,
+                title: 1,
+                description: 1,
+                duration: 1,
+                isPublished: 1,
+                ownerDetails: {
+                    fullName: "$ownerDetails.fullName",
+                    email: "$ownerDetails.email",
+                },
+                createdAt:1,
+                updatedAt:1,
+            },
+        },
+        {
+            $sort: {
+                createdAt: -1, // Sort by createdAt in descending order
+            },
+        },
+    ]);
 
-    const videoFiles = await Video.find();
+    console.log("videoFiles---->", videoFiles);
 
     if (!videoFiles) {
-        throw new ApiError(500, "Error while getting the video");
+        throw new ApiError(500, "Error while getting the videos");
     }
 
     return res.status(200).json(new ApiResponse(200, videoFiles, "Videos fetched successfully"));
-
-
 });
+
 
 const getUserVideosById = asyncHandler(async (req, res) => {
 
