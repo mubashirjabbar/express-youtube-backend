@@ -7,7 +7,6 @@ import { deleteFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js
 import { ApiResponse } from "../utils/apiResponse.js";
 
 
-
 const publishVideo = asyncHandler(async (req, res) => {
     const { title, description, isPublished } = req.body;
 
@@ -90,8 +89,8 @@ const getAllVideoFiles = asyncHandler(async (req, res) => {
                     fullName: "$ownerDetails.fullName",
                     email: "$ownerDetails.email",
                 },
-                createdAt:1,
-                updatedAt:1,
+                createdAt: 1,
+                updatedAt: 1,
             },
         },
         {
@@ -109,7 +108,6 @@ const getAllVideoFiles = asyncHandler(async (req, res) => {
 
     return res.status(200).json(new ApiResponse(200, videoFiles, "Videos fetched successfully"));
 });
-
 
 const getUserVideosById = asyncHandler(async (req, res) => {
 
@@ -233,7 +231,6 @@ const deleteVideo = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, {}, "Video Deleted"));
 });
 
-
 const publishAVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params;
 
@@ -266,10 +263,5 @@ const publishAVideo = asyncHandler(async (req, res) => {
 
     return res.status(200).json(new ApiResponse(200, videoPublished, "Video published successfully"));
 });
-
-
-
-
-
 
 export { publishVideo, getAllVideoFiles, getUserVideosById, updateVideo, deleteVideo, publishAVideo }
