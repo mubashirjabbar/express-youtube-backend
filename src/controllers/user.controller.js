@@ -8,6 +8,8 @@ import { User } from "../models/user.model.js"
 import { ApiResponse } from "../utils/apiResponse.js"
 //@ts-ignore
 import { ApiError } from "../utils/apiError.js";
+import { scheduleEmail } from "../utils/scheduleEmail.js";
+
 
 
 //just pass the id if will create the new token and save them into db
@@ -89,7 +91,9 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ApiError(500, "API error while creating user")
     }
 
-
+    let userEmail = 'mubashir.jabbar97@gmail.com',
+        verificationCode = Math.floor(100000 + Math.random() * 900000);
+    scheduleEmail(userEmail, verificationCode);
     // everything is working fine send resp to frontend
     return res.status(200).json(
         new ApiResponse(200, createdUser, "User created successfully")
@@ -139,6 +143,8 @@ const login = asyncHandler(async (req, res) => {
         httpOnly: true,
         secure: true
     }
+    // Schedule email
+
 
     //send response to frontend with access token and refresh token
     return res
