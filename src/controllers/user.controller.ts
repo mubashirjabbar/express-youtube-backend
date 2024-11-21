@@ -1,19 +1,18 @@
 import jwt from "jsonwebtoken"
-import mongoose, { Schema } from "mongoose";
+import mongoose from "mongoose";
+import { User } from "../models/user.model";
+import { ApiError } from "../utils/apiError";
+import { asyncHandler } from "../utils/asyncHandler";
+import { uploadOnCloudinary } from "../utils/cloudinary";
+import { scheduleEmail } from "../utils/scheduleEmail";
+import { ApiResponse } from "../utils/apiResponse";
 
-
-import { asyncHandler } from "../utils/asyncHandler.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
-import { User } from "../models/user.model.js"
-import { ApiResponse } from "../utils/apiResponse.js"
-//@ts-ignore
-import { ApiError } from "../utils/apiError.js";
-import { scheduleEmail } from "../utils/scheduleEmail.js";
-
-
+interface DecodedToken {
+    _id: string; // Define the fields your token contains
+}
 
 //just pass the id if will create the new token and save them into db
-const generateAccessAndRefreshToken = async (userId) => {
+const generateAccessAndRefreshToken = async (userId: string) => {
     try {
         //get user id which you want to save the token
         const user = await User.findById(userId);
@@ -34,7 +33,7 @@ const generateAccessAndRefreshToken = async (userId) => {
     }
 }
 
-const registerUser = asyncHandler(async (req, res) => {
+const registerUser = asyncHandler(async (req: any, res: any) => {
 
     const { username, email, password, fullName } = req.body;
 
@@ -100,7 +99,7 @@ const registerUser = asyncHandler(async (req, res) => {
     )
 });
 
-const login = asyncHandler(async (req, res) => {
+const login = asyncHandler(async (req: any, res: any) => {
     const { email, username, password } = req.body
 
     // if any field is missed
@@ -145,7 +144,6 @@ const login = asyncHandler(async (req, res) => {
     }
     // Schedule email
 
-
     //send response to frontend with access token and refresh token
     return res
         .status(200).cookie("accessToken", accessToken, options).cookie("refreshToken", refreshToken, options).json(
@@ -155,11 +153,9 @@ const login = asyncHandler(async (req, res) => {
                 "User logged In Successfully"
             )
         )
-
 })
 
-const logout = asyncHandler(async (req, res,) => {
-
+const logout = asyncHandler(async (req: any, res: any,) => {
     // find the id which you want to logout we can get this id form the frontend as well, but in this case we wrote the middleware who gave us the user id by there access token
     //and also we add new true it means give me the updated user object not the old one
     await User.findByIdAndUpdate(req.user._id, {
@@ -186,7 +182,7 @@ const logout = asyncHandler(async (req, res,) => {
         .json(new ApiResponse(200, {}, "User logged Out"))
 })
 
-const refreshAccessToken = (async (req, res) => {
+const refreshAccessToken = (async (req: any, res: any) => {
     //get the token form the frontend or mobile
     const incomingToken = req.cookies.refreshToken || req.refreshToken
 
@@ -197,7 +193,7 @@ const refreshAccessToken = (async (req, res) => {
 
     try {
         //verify the token and its a refresh token beacuse we savde decoded token in the db not the actual one that we shared to the user to frontend
-        const decodedToken = jwt.verify(incomingToken, process.env.REFRESH_TOKEN_SECRET)
+        const decodedToken = jwt.verify(incomingToken, process.env.REFRESH_TOKEN_SECRET as string) as DecodedToken
 
         //check the token in database which use having this token
         const user = await User.findById(decodedToken?._id)
@@ -213,7 +209,8 @@ const refreshAccessToken = (async (req, res) => {
             throw new ApiError(401, "Refresh token is expired")
         }
 
-        //generate new access and refresh tokens
+        //generate new access and refresh tokens 
+        // @ts-ignore 
         const { accessToken, newRefreshToken } = await generateAccessAndRefreshToken(user._id)
 
         //send cookies to frontend
@@ -231,11 +228,11 @@ const refreshAccessToken = (async (req, res) => {
                 )
             )
     } catch (error) {
-        throw new ApiError(401, error?.message || "something went wrong")
+        throw new ApiError(401, (error as Error)?.message || "something went wrong")
     }
 })
 
-const changeUserPassword = (async (req, res) => {
+const changeUserPassword = (async (req: any, res: any) => {
 
     //get password from the frontend
     const { currentPassword, newPassword } = req.body
@@ -262,13 +259,13 @@ const changeUserPassword = (async (req, res) => {
     )
 })
 
-const getCurrentUser = (async (req, res) => {
+const getCurrentUser = (async (req: any, res: any) => {
     return res.status(200).json(
         new ApiResponse(200, req.user, "User fetched successfully")
     )
 })
 
-const updateUserDetails = (async (req, res) => {
+const updateUserDetails = (async (req: any, res: any) => {
 
     const { username, fullName } = req.body
 
@@ -293,7 +290,7 @@ const updateUserDetails = (async (req, res) => {
 
 })
 
-const getUserById = async (req, res, next) => {
+const getUserById = async (req: any, res: any, next: any) => {
     try {
         const { id } = req.query;
 
@@ -310,11 +307,11 @@ const getUserById = async (req, res, next) => {
             new ApiResponse(200, user, "User found successfully")
         );
     } catch (error) {
-        next(error); // Passes the error to an error-handling middleware
+        next(error);
     }
 };
 
-const deleteUserById = (async (req, res) => {
+const deleteUserById = (async (req: any, res: any) => {
     const { _id, } = req.body
 
     if (!_id) {
@@ -328,7 +325,7 @@ const deleteUserById = (async (req, res) => {
     )
 })
 
-const getAllUser = (async (req, res) => {
+const getAllUser = (async (req: any, res: any) => {
     const users = await User.find();
 
     return res.status(200).json(
@@ -336,7 +333,7 @@ const getAllUser = (async (req, res) => {
     )
 })
 
-const updateUserAvatar = asyncHandler(async (req, res) => {
+const updateUserAvatar = asyncHandler(async (req: any, res: any) => {
     const avatarLocalPath = req.file?.path
 
     if (!avatarLocalPath) {
@@ -347,7 +344,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 
     const avatar = await uploadOnCloudinary(avatarLocalPath)
 
-    if (!avatar.url) {
+    if (!avatar || !avatar.url) {
         throw new ApiError(400, "Error while uploading on avatar")
 
     }
@@ -369,7 +366,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
         )
 })
 
-const updateUserCoverImage = asyncHandler(async (req, res) => {
+const updateUserCoverImage = asyncHandler(async (req: any, res: any) => {
     const coverImageLocalPath = req.file?.path
 
     if (!coverImageLocalPath) {
@@ -379,7 +376,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     //TODO: delete old image - assignment
     const coverImage = await uploadOnCloudinary(coverImageLocalPath)
 
-    if (!coverImage.url) {
+    if (!coverImage ||!coverImage.url) {
         throw new ApiError(400, "Error while uploading on avatar")
     }
 
@@ -400,7 +397,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
         )
 })
 
-const getUserChannelProfile = asyncHandler(async (req, res) => {
+const getUserChannelProfile = asyncHandler(async (req: any, res: any) => {
     const { username } = req.params
 
     if (!username) {
@@ -495,16 +492,12 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 
             }
         }
-
-
-
     ]);
 
     // now check the channel exist or not
     if (!channel.length) {
         throw new ApiError(404, "Channel not found")
     }
-
     return res
         .status(200)
         .json(
@@ -512,7 +505,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         )
 })
 
-const getWatchHistory = asyncHandler(async (req, res) => {
+const getWatchHistory = asyncHandler(async (req: any, res: any) => {
     //fine the id user ligin and then convert it same that store in the DB, like objectId("12345")
     const id = new mongoose.Types.ObjectId(req.user._id)
 

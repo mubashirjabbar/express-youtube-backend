@@ -1,10 +1,9 @@
 import { Router } from "express";
-import { registerUser, login, logout, refreshAccessToken, changeUserPassword, getCurrentUser, updateUserDetails, getUserById, deleteUserById, getAllUser, updateUserAvatar, updateUserCoverImage, getUserChannelProfile, getWatchHistory } from "../controllers/user.controller.js"
+import { upload } from "../middlewares/multer.middleware";
+import { changeUserPassword, deleteUserById, getAllUser, getCurrentUser, getUserById, getUserChannelProfile, getWatchHistory, login, logout, refreshAccessToken, registerUser, updateUserAvatar, updateUserCoverImage, updateUserDetails } from "../controllers/user.controller";
+import { verifyJwt } from "../middlewares/auth.middleware";
 
-import { upload } from "../middlewares/multer.middleware.js"
-import { verifyJwt } from "../middlewares/auth.middleware.js"
-
-const router = new Router();
+const router = Router();
 
 //upload.fields is the middleware
 router.route("/register").post(

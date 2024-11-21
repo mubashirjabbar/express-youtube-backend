@@ -1,7 +1,7 @@
 import cron from "node-cron";
 import { sendVerificationEmail } from "./emailService.js";
 
-export const scheduleEmail = (email, verificationCode) => {
+export const scheduleEmail = (email: any, verificationCode: any) => {
     // Get the current time and calculate the delay for 2 minutes
     const scheduledTime = new Date(Date.now() + 2 * 60 * 1000);
 

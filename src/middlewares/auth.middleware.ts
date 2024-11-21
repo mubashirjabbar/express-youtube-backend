@@ -1,11 +1,14 @@
 import jwt from "jsonwebtoken"
+import { asyncHandler } from "../utils/asyncHandler";
+import { ApiError } from "../utils/apiError";
+import { User } from "../models/user.model";
 
-import { asyncHandler } from "../utils/asyncHandler.js";
-import { User } from "../models/user.model.js"
 //@ts-ignore
-import { ApiError } from "../utils/apiError.js";
+interface DecodedToken {
+    _id: string; // Define the fields your token contains
+}
 
-export const verifyJwt = asyncHandler(async (req, _, next) => {
+export const verifyJwt = asyncHandler(async (req: any, _: any, next: any) => {
 
     try {
         //get token form the cookies
@@ -13,11 +16,11 @@ export const verifyJwt = asyncHandler(async (req, _, next) => {
 
         // if token is not present
         if (!token) {
-            throw new ApiError(401,"No access token found")
+            throw new ApiError(401, "No access token found")
         }
 
         // check the token validity
-        const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)
+        const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET as string) as DecodedToken
 
         //get the user details without the password and refresh token
         const user = await User.findById(decodedToken?._id).select("-password -refresh_token")
@@ -33,8 +36,6 @@ export const verifyJwt = asyncHandler(async (req, _, next) => {
         //go to the next middleware or route
         next()
     } catch (error) {
-        throw new ApiError(401, error?.message || "invalid access token")
-
+        throw new ApiError(401, (error as Error)?.message || "invalid access token")
     }
-
 })

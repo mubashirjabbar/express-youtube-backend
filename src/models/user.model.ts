@@ -57,7 +57,7 @@ userSchema.pre('save', async function (next) {
 });
 
 //check the password is correct or not use isPasswordCorrect is by default given by mongoose
-userSchema.methods.isPasswordCorrect = async function (password) {
+userSchema.methods.isPasswordCorrect = async function (password: any) {
     return await bcrypt.compare(password, this.password)
 }
 
@@ -70,7 +70,7 @@ userSchema.methods.generateAccessToken = function () {
             username: this.username,
             fullName: this.fullName
         },
-        process.env.ACCESS_TOKEN_SECRET,
+        process.env.ACCESS_TOKEN_SECRET as string,
         {
             expiresIn: process.env.ACCESS_TOKEN_EXPIRY
         }
@@ -84,12 +84,11 @@ userSchema.methods.generateRefreshToken = function () {
             _id: this._id,
 
         },
-        process.env.REFRESH_TOKEN_SECRET,
+        process.env.REFRESH_TOKEN_SECRET as string,
         {
             expiresIn: process.env.REFRESH_TOKEN_EXPIRY
         }
     )
 }
-
 
 export const User = mongoose.model("User", userSchema);

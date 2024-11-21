@@ -9,7 +9,7 @@ cloudinary.config({
 });
 
 //common function to upload images to the cloudinary files
-const uploadOnCloudinary = async (localFilePath) => {
+const uploadOnCloudinary = async (localFilePath: any) => {
     try {
         if (!localFilePath) return null
 
@@ -29,7 +29,7 @@ const uploadOnCloudinary = async (localFilePath) => {
     }
 }
 
-const deleteFromCloudinary = async (cloudinaryFilepath) => {
+const deleteFromCloudinary = async (cloudinaryFilepath: any) => {
     try {
         if (!cloudinaryFilepath) return null;
 
@@ -41,7 +41,7 @@ const deleteFromCloudinary = async (cloudinaryFilepath) => {
         const response = await cloudinary.uploader.destroy(publicId);
         return response;
     } catch (error) {
-        console.error("Error while deleting file from Cloudinary:", error.message || error);
+        console.error("Error while deleting file from Cloudinary:", (error as Error)?.message || error);
         return null;
     }
 };
