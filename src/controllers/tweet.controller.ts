@@ -1,16 +1,14 @@
-import jwt from "jsonwebtoken"
-import mongoose, { Schema } from "mongoose";
 
 
-import { asyncHandler } from "../utils/asyncHandler.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
-import { Tweet } from "../models/tweet.model.js"
-import { ApiResponse } from "../utils/apiResponse.js"
 //@ts-ignore
-import { ApiError } from "../utils/apiError.js";
+
+import { Tweet } from "../models/tweet.model";
+import { ApiError } from "../utils/apiError";
+import { ApiResponse } from "../utils/apiResponse";
+import { asyncHandler } from "../utils/asyncHandler";
 
 
-const createTweet = asyncHandler(async (req, res) => {
+const createTweet = asyncHandler(async (req: any, res: any) => {
     const { content } = req.body;
 
     if (!content) {

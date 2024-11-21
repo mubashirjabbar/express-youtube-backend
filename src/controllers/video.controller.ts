@@ -1,10 +1,13 @@
-import mongoose, { isValidObjectId, Schema } from "mongoose";
+import { Request, Response } from "express";
+
+import { isValidObjectId } from "mongoose";
+import { ApiError } from "../utils/apiError";
+import { deleteFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary";
+import { Video } from "../models/video.model";
+import { ApiResponse } from "../utils/apiResponse";
+import { asyncHandler } from "../utils/asyncHandler";
 //@ts-ignore
-import { ApiError } from "../utils/apiError.js";
-import { Video } from "../models/video.model.js"
-import { asyncHandler } from "../utils/asyncHandler.js";
-import { deleteFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
-import { ApiResponse } from "../utils/apiResponse.js";
+
 
 
 const publishVideo = asyncHandler(async (req, res) => {
@@ -23,7 +26,7 @@ const publishVideo = asyncHandler(async (req, res) => {
     // uploading video
     const videoFile = await uploadOnCloudinary(videoFileLocalPath);
 
-    if (!videoFile.url) {
+    if (!videoFile || !videoFile.url) {
         throw new ApiError(500, "Error while uploading video file");
     }
 
@@ -36,11 +39,9 @@ const publishVideo = asyncHandler(async (req, res) => {
     // uploading
     const thumbnail = await uploadOnCloudinary(thumbnailLocalPath);
 
-    if (!thumbnail.url) {
+    if (!thumbnail || !thumbnail.url) {
         throw new ApiError(400, "Error while uploading thumbnail file");
     }
-
-
 
     // create new video in db
     const video = await Video.create({
@@ -61,7 +62,7 @@ const publishVideo = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, video, "Video Published"));
 });
 
-const getAllVideoFiles = asyncHandler(async (req, res) => {
+const getAllVideoFiles = asyncHandler(async (req: Request, res: Response) => {
     const videoFiles = await Video.aggregate([
         {
             $lookup: {
@@ -100,8 +101,6 @@ const getAllVideoFiles = asyncHandler(async (req, res) => {
         },
     ]);
 
-    console.log("videoFiles---->", videoFiles);
-
     if (!videoFiles) {
         throw new ApiError(500, "Error while getting the videos");
     }
@@ -109,7 +108,7 @@ const getAllVideoFiles = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, videoFiles, "Videos fetched successfully"));
 });
 
-const getUserVideosById = asyncHandler(async (req, res) => {
+const getUserVideosById = asyncHandler(async (req: Request, res: Response) => {
 
     const { id } = req.params;
 
@@ -128,7 +127,7 @@ const getUserVideosById = asyncHandler(async (req, res) => {
 
 });
 
-const updateVideo = asyncHandler(async (req, res) => {
+const updateVideo = asyncHandler(async (req: any, res: any) => {
 
     const { title, description } = req.body;
     const { id } = req.params;
@@ -191,7 +190,7 @@ const updateVideo = asyncHandler(async (req, res) => {
 
 });
 
-const deleteVideo = asyncHandler(async (req, res) => {
+const deleteVideo = asyncHandler(async (req: any, res: any) => {
     const { videoId } = req.params;
     //TODO: delete video
     if (!isValidObjectId(videoId)) {
@@ -231,7 +230,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, {}, "Video Deleted"));
 });
 
-const publishAVideo = asyncHandler(async (req, res) => {
+const publishAVideo = asyncHandler(async (req: any, res: any) => {
     const { videoId } = req.params;
 
     if (!isValidObjectId(videoId)) {

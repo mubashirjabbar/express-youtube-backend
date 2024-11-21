@@ -1,10 +1,10 @@
 import { Router } from "express";
+import { verifyJwt } from "../middlewares/auth.middleware";
+import { upload } from "../middlewares/multer.middleware";
+import { deleteVideo, getAllVideoFiles, getUserVideosById, publishAVideo, publishVideo, updateVideo } from "../controllers/video.controller";
 
-import { upload } from "../middlewares/multer.middleware.js"
-import { verifyJwt } from "../middlewares/auth.middleware.js"
-import { deleteVideo, getAllVideoFiles, getUserVideosById, publishAVideo, publishVideo, updateVideo } from "../controllers/video.controller.js";
 
-const router = new Router();
+const router = Router();
 
 //upload.fields is the middleware
 router.route("/publishVideo").post(
