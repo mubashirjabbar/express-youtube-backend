@@ -16,9 +16,9 @@ app.use(express.static("public"))
 app.use(cookieParser());
 
 //import routes 
-import userRoutes from "./routes/user.routes.js"
-import videoRouter from "./routes/video.routes.js"
-import tweetsRouter from "./routes/tweet.routes.js"
+import userRoutes from "./routes/user.routes"
+import videoRouter from "./routes/video.routes"
+import tweetsRouter from "./routes/tweet.routes"
 
 app.use("/api/v1/users", userRoutes)
 app.use("/api/v1/videos", videoRouter)
