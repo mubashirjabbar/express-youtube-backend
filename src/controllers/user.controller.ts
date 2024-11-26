@@ -246,7 +246,6 @@ const changeUserPassword = (async (req: any, res: any) => {
     if (!passwordCorrect) {
         throw new ApiError(400, "Old password is incorrect")
     }
-
     //set new password
     user.password = newPassword
 
