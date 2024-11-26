@@ -1,17 +1,21 @@
 import express, { Request, Response, NextFunction } from "express";
+import helmet from "helmet";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+
 import { ApiError } from "./utils/apiError";
+import { generalLimiter } from './utils/rateLimit';
 
 // Initialize Express app
 const app = express();
 
+app.use(helmet()); // Use helmet for security
+
+// Apply the general rate limiter to all routes
+app.use(generalLimiter);
+
 // Middleware setup
-app.use(
-    cors({
-        origin: process.env.CORS_ORIGIN,
-        credentials: true,
-    })
+app.use(cors({ origin: process.env.CORS_ORIGIN, credentials: true, })
 );
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));

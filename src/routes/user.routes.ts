@@ -2,6 +2,7 @@ import { Router } from "express";
 import { upload } from "../middlewares/multer.middleware";
 import { changeUserPassword, deleteUserById, getAllUser, getCurrentUser, getUserById, getUserChannelProfile, getWatchHistory, login, logout, refreshAccessToken, registerUser, updateUserAvatar, updateUserCoverImage, updateUserDetails, verifyAccount } from "../controllers/user.controller";
 import { verifyJwt } from "../middlewares/auth.middleware";
+import { loginLimiter } from "../utils/rateLimit";
 
 const router = Router();
 
@@ -13,7 +14,7 @@ router.route("/register").post(
 router.route("/verification").post(verifyJwt, verifyAccount)
 
 //login
-router.route("/login").post(login)
+router.route("/login").post(loginLimiter, login)
 
 // secure routes
 
