@@ -40,7 +40,17 @@ const userSchema = new Schema({
     },
     refreshToken: {
         type: String
+    },
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+
+    verificationCode: {
+        type: Number,
+        default: null
     }
+
 }, { timestamps: true })
 
 //do anything before the db starts use PRE

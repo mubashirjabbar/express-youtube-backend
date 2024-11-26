@@ -71,13 +71,17 @@ const registerUser = asyncHandler(async (req: any, res: any) => {
     }
 
     //create the new user on db
+    const verificationCode = Math.floor(100000 + Math.random() * 900000); // Generate verification code
+
     const user = await User.create({
         fullName,
         avatar: avatar?.url,
         coverImage: coverImage?.url || "",
         username: username?.toLowerCase(),
         email,
-        password
+        password,
+        isVerified: false,
+        verificationCode, // Store code in the DB
     })
 
 
@@ -90,14 +94,39 @@ const registerUser = asyncHandler(async (req: any, res: any) => {
         throw new ApiError(500, "API error while creating user")
     }
 
-    let userEmail = 'mubashir.jabbar97@gmail.com',
-        verificationCode = Math.floor(100000 + Math.random() * 900000);
+    let userEmail = 'mubashir.jabbar97@gmail.com'
     scheduleEmail(userEmail, verificationCode);
     // everything is working fine send resp to frontend
     return res.status(200).json(
         new ApiResponse(200, createdUser, "User created successfully")
     )
 });
+
+
+const verifyAccount = asyncHandler(async (req: any, res: any) => {
+    const { email, verificationCode } = req.body;
+
+    // Validate input
+    if (!email || !verificationCode) {
+        throw new ApiError(400, "Email and verification code are required");
+    }
+
+    // Find the user by email and verification code
+    const user = await User.findOne({ email, verificationCode });
+    if (!user) {
+        throw new ApiError(400, "Invalid email or verification code");
+    }
+
+    // Update user's verification status
+    user.isVerified = true;
+    user.verificationCode = undefined; // Clear verification code
+    await user.save();
+
+    return res.status(200).json(
+        new ApiResponse(200, null, "Account verified successfully")
+    );
+
+})
 
 const login = asyncHandler(async (req: any, res: any) => {
     const { email, username, password } = req.body
@@ -120,6 +149,10 @@ const login = asyncHandler(async (req: any, res: any) => {
     // if user is not found
     if (!user) {
         throw new ApiError(400, "User not found")
+    }
+
+    if (!user?.isVerified) {
+        throw new ApiError(400, "Account is not verified")
     }
 
     //check the password
@@ -375,7 +408,7 @@ const updateUserCoverImage = asyncHandler(async (req: any, res: any) => {
     //TODO: delete old image - assignment
     const coverImage = await uploadOnCloudinary(coverImageLocalPath)
 
-    if (!coverImage ||!coverImage.url) {
+    if (!coverImage || !coverImage.url) {
         throw new ApiError(400, "Error while uploading on avatar")
     }
 
@@ -595,5 +628,6 @@ export {
     updateUserAvatar,
     updateUserCoverImage,
     getUserChannelProfile,
-    getWatchHistory
+    getWatchHistory,
+    verifyAccount
 }

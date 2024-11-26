@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { upload } from "../middlewares/multer.middleware";
-import { changeUserPassword, deleteUserById, getAllUser, getCurrentUser, getUserById, getUserChannelProfile, getWatchHistory, login, logout, refreshAccessToken, registerUser, updateUserAvatar, updateUserCoverImage, updateUserDetails } from "../controllers/user.controller";
+import { changeUserPassword, deleteUserById, getAllUser, getCurrentUser, getUserById, getUserChannelProfile, getWatchHistory, login, logout, refreshAccessToken, registerUser, updateUserAvatar, updateUserCoverImage, updateUserDetails, verifyAccount } from "../controllers/user.controller";
 import { verifyJwt } from "../middlewares/auth.middleware";
 
 const router = Router();
@@ -9,6 +9,8 @@ const router = Router();
 router.route("/register").post(
     upload.fields([{ name: "avatar", maxCount: 1 }, { name: "coverImage", maxCount: 1 }]),
     registerUser)
+
+router.route("/verification").post(verifyJwt, verifyAccount)
 
 //login
 router.route("/login").post(login)
