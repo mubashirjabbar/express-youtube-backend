@@ -1,8 +1,11 @@
 import { Router } from "express";
+
 import { upload } from "../middlewares/multer.middleware";
 import { changeUserPassword, deleteUserById, getAllUser, getCurrentUser, getUserById, getUserChannelProfile, getWatchHistory, login, logout, refreshAccessToken, registerUser, updateUserAvatar, updateUserCoverImage, updateUserDetails, verifyAccount } from "../controllers/user.controller";
 import { verifyJwt } from "../middlewares/auth.middleware";
 import { loginLimiter } from "../utils/rateLimit";
+import { validateRequest } from "../middlewares/validateRequest.middleware";
+import { loginSchema } from "../validators/loginValidator";
 
 const router = Router();
 
@@ -14,10 +17,9 @@ router.route("/register").post(
 router.route("/verification").post(verifyJwt, verifyAccount)
 
 //login
-router.route("/login").post(loginLimiter, login)
+router.route("/login").post(loginLimiter, validateRequest(loginSchema), login)
 
 // secure routes
-
 //middleware to check the user form his token
 router.route("/logout").post(verifyJwt, logout)
 
